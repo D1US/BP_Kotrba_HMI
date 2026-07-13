@@ -1,5 +1,5 @@
 <?php
-require 'config.php'
+require 'config.php';
 
 $button = $_GET['button'] ?? '';
 $allowed = ['start','stop'];
@@ -14,6 +14,5 @@ $xml = simplexml_load_file($COMMAND_XML_FILE_PATH);
 $xml->$button = 1;
 $xml->asXML($COMMAND_XML_FILE_PATH);
 
-echo 'OK'
-
+echo 'OK';
 ?>

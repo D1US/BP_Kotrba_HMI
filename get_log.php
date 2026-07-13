@@ -8,5 +8,5 @@ if (!file_exists($LOG_FILE_PATH)){
     exit;
     }
 
-echo file_get_contents($LOG_FILE_PATH)
+echo file_get_contents($LOG_FILE_PATH);
 ?>

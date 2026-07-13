@@ -9,7 +9,7 @@ function isScrolledToBottom(){
 function updateLog(){
     const wasAtBottom = isScrolledToBottom();
 
-    fetch(get_log.php)
+    fetch('get_log.php')
         .then(Response => Response.text())
         .then(text => {
             logContent.textContent = text;
@@ -77,7 +77,7 @@ dropZone.addEventListener('drop', (e) => {
             return;
         }
         selectedFile = file;
-        dropZone.textContent = 'Selected: ${selectedFile.name}';
+        dropZone.textContent = `Selected: ${selectedFile.name}`;
     }
 });
 
@@ -90,7 +90,7 @@ fileInput.addEventListener('change',() => {
             return;
         }
         selectedFile = file;
-        dropZone.textContent = 'Selected: ${selectedFile.name}';
+        dropZone.textContent = `Selected: ${selectedFile.name}`;
     }
 });
 
@@ -103,7 +103,7 @@ document.getElementById('save-btn').addEventListener('click', () => {
     const formData = new FormData();
     formData.append('file',selectedFile);
 
-    fetch(save_file.php, {
+    fetch('save_file.php', {
         method: 'POST',
         body: formData
     })

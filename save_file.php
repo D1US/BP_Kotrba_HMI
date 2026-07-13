@@ -1,5 +1,5 @@
 <?php
-require 'config.php'
+require 'config.php';
 
 if(!isset($_FILES['file'])){
     http_response_code(400);
@@ -7,8 +7,8 @@ if(!isset($_FILES['file'])){
     exit;
 }
 
-$originalName = $_FILES['file']['name']
-§extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+$originalName = $_FILES['file']['name'];
+$extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
 if ($extension !== 'nc') {
     http_response_code(400);
@@ -16,7 +16,7 @@ if ($extension !== 'nc') {
     exit;
 }
 
-$uploaded = $_FILES['file']['tmp_name']
+$uploaded = $_FILES['file']['tmp_name'];
 
 if(move_uploaded_file($uploaded, $SAVE_FILE_PATH)){
     echo 'OK'
