@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang = 'EN'>
+<head>
+    <meta charset="UTF-8">
+    <title>Laser Engraver HMI</title>
+</head>
+<body>
+    <h1> Machine Log Viewer</h1>
+    <div id="log-container" style="height: 300px; overflow-y: auto; border: 1px solid #acc; font-family: monospace;white-space: pre-wrap;">
+         <pre id="log-container"></pre>
+    </div>
+
+    <button id="clear-btn">Clear Log</button>
+    <button id="start-btn">Start</button>
+    <button id="start-btn">Stop</button>
+
+    <hr>
+    <h2>Save File to Machine</h2>
+    <div id="drop-zone" style="border: 2px dashed #999; padding: 20px; text-align: center;">
+        Drag & drop file here, or click to select
+        <input type="file" id="file-input" style="display: none;">
+    </div>
+    <button id="save-btn">Save</button>
+
+    <script scr="app.js"></script>
+</body>
+</html>
