@@ -266,3 +266,32 @@ button:disabled {
     margin-top: 0.75rem;
     align-self: flex-start;
 }
+
+@media (max-width: 768px) {
+    html, body {
+        overflow-y: auto;
+        overflow-x: hidden;
+        height: auto;
+    }
+
+    body {
+        padding: 1rem;
+    }
+
+    .app-layout {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+    }
+
+    .right-column {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+    }
+
+    #log-container {
+        height: 250px; /* fixed height so it doesn't try to fill an undefined space */
+        flex: none;
+    }
+}
