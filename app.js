@@ -200,3 +200,20 @@ function updatePosition() {
 
 updatePosition();
 setInterval(updatePosition, 1000);
+
+//Download log
+document.getElementById('download-btn').addEventListener('click', () => {
+    const blob = new Blob([logContent.textContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `machine_log_${timestamp}.log`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+});
