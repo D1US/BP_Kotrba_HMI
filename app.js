@@ -29,7 +29,7 @@ document.getElementById('clear-btn').addEventListener('click',() => {
     fetch('clear_log.php')
         .then(Response => Response.text())
         .then(()=>{
-            logContent.textContent = ''
+            logContent.textContent = '';
         })
         .catch(err => console.error('Clear failed:', err));
 });
@@ -59,16 +59,16 @@ dropZone.addEventListener('click', () => {
 
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropZone.style.borderColor = '#333'
+    dropZone.classList.add('drag-active');
 });
 
 dropZone.addEventListener('dragleave', () => {
-    dropZone.style.borderColor = '#999'
-})
+    dropZone.classList.remove('drag-active');
+});
 
 dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropZone.style.borderColor = '#999'
+    dropZone.classList.remove('drag-active');
 
     if (e.dataTransfer.files.length > 0) {
         const file = e.dataTransfer.files[0];
@@ -109,7 +109,94 @@ document.getElementById('save-btn').addEventListener('click', () => {
     })
         .then(Response => Response.text())
         .then(result => {
-            alert(result === 'OK' ? 'File saved successfuly' : 'Save Failed' + result)
+            alert(result === 'OK' ? 'File saved successfuly' : 'Save Failed' + result);
         })
         .catch(err => console.error('Save request failed:', err));
 });
+
+
+//Mode Controll
+const modeBtn = document.getElementById('mode-btn');
+let currentMode = '0'; // '0' = manual, '1' = auto
+
+function renderModeButton() {
+    const isAuto = currentMode === '1';
+
+    if (isAuto) {
+        modeBtn.textContent = 'Mode: AUTO';
+        modeBtn.classList.add('mode-auto');
+        modeBtn.classList.remove('mode-manual');
+    } else {
+        modeBtn.textContent = 'Mode: MANUAL';
+        modeBtn.classList.add('mode-manual');
+        modeBtn.classList.remove('mode-auto');
+    }
+
+    document.getElementById('start-btn').disabled = !isAuto;
+    document.getElementById('stop-btn').disabled = !isAuto;
+
+    document.querySelectorAll('.jog-btn').forEach(btn => {
+        btn.disabled = isAuto;
+    });
+}
+
+function loadInitialMode() {
+    fetch('get_mode.php')
+        .then(response => response.text())
+        .then(value => {
+            currentMode = value.trim();
+            renderModeButton();
+        })
+        .catch(err => console.error('Failed to load mode:', err));
+}
+
+modeBtn.addEventListener('click', () => {
+    const newMode = currentMode === '1' ? '0' : '1';
+
+    fetch(`set_mode.php?value=${newMode}`)
+        .then(response => response.text())
+        .then(result => {
+            if (result === 'OK') {
+                currentMode = newMode;
+                renderModeButton();
+            } else {
+                alert('Failed to change mode: ' + result);
+            }
+        })
+        .catch(err => console.error('Set mode failed:', err));
+});
+
+loadInitialMode();
+
+
+// ===== Manual jog controls (hold to move) =====
+document.querySelectorAll('.jog-btn').forEach(btn => {
+    const axis = btn.dataset.axis;
+    const dir = btn.dataset.dir;
+
+    function sendJog(state) {
+        fetch(`jog.php?axis=${axis}&dir=${dir}&state=${state}`)
+            .catch(err => console.error('Jog command failed:', err));
+    }
+
+    btn.addEventListener('mousedown', () => sendJog(1));
+    btn.addEventListener('mouseup', () => sendJog(0));
+    btn.addEventListener('mouseleave', () => sendJog(0)); // stops motion if pointer drags off while held
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); sendJog(1); });
+    btn.addEventListener('touchend', (e) => { e.preventDefault(); sendJog(0); });
+});
+
+// ===== Position display polling =====
+function updatePosition() {
+    fetch('get_position.php')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('pos-x').textContent = data.x;
+            document.getElementById('pos-y').textContent = data.y;
+            document.getElementById('pos-z').textContent = data.z;
+        })
+        .catch(err => console.error('Position fetch failed:', err));
+}
+
+updatePosition();
+setInterval(updatePosition, 1000);

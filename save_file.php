@@ -19,7 +19,7 @@ if ($extension !== 'nc') {
 $uploaded = $_FILES['file']['tmp_name'];
 
 if(move_uploaded_file($uploaded, $SAVE_FILE_PATH)){
-    echo 'OK'
+    echo 'OK';
 } else {
     http_response_code(500);
     echo 'Save failed';

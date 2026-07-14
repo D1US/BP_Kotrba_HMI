@@ -1,27 +1,78 @@
 <!DOCTYPE html>
-<html lang = 'EN'>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Laser Engraver HMI</title>
+    <title>PLC HMI</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1> Machine Log Viewer</h1>
-    <div id="log-container" style="height: 300px; overflow-y: auto; border: 1px solid #acc; font-family: monospace;white-space: pre-wrap;">
-         <pre id="log-content"></pre>
+ 
+    <div class="app-layout">
+ 
+        <!-- LEFT: control panel -->
+        <div class="control-panel">
+            <h1>Controls</h1>
+            <button id="mode-btn">Mode Manual</button>
+            <h2>Automat</h2>
+            <div class="button-row">
+                <button id="start-btn">Start</button>
+                <button id="stop-btn">Stop</button>
+            </div>
+
+
+            <h2>Manual</h2>
+            <table class="jog-table">
+                <tr>
+                    <td class="axis-label">X</td>
+                    <td class="axis-value" id="pos-x">0.000</td>
+                </tr>
+                <tr>
+                    <td><button class="jog-btn" data-axis="x" data-dir="plus">+</button></td>
+                    <td><button class="jog-btn" data-axis="x" data-dir="minus">-</button></td>
+                </tr>
+                <tr>
+                    <td class="axis-label">Y</td>
+                    <td class="axis-value" id="pos-y">0.000</td>
+                </tr>
+                <tr>
+                    <td><button class="jog-btn" data-axis="y" data-dir="plus">+</button></td>
+                    <td><button class="jog-btn" data-axis="y" data-dir="minus">-</button></td>
+                </tr>
+                <tr>
+                    <td class="axis-label">Z</td>
+                    <td class="axis-value" id="pos-z">0.000</td>
+                </tr>
+                <tr>
+                    <td><button class="jog-btn" data-axis="z" data-dir="plus">+</button></td>
+                    <td><button class="jog-btn" data-axis="z" data-dir="minus">-</button></td>
+                </tr>
+            </table>
+        </div>
+ 
+        <!-- RIGHT: log (2/3) + drop zone (1/3) -->
+        <div class="right-column">
+ 
+            <div class="panel">
+                <h2>Machine Log</h2>
+                <div id="log-container">
+                    <pre id="log-content"></pre>
+                </div>
+                <button id="clear-btn">Clear Log</button>
+            </div>
+ 
+            <div class="panel">
+                <h2>Load Program File</h2>
+                <div id="drop-zone">
+                    Drag & drop a .nc file here, or click to select
+                    <input type="file" id="file-input" accept=".nc" style="display:none;">
+                </div>
+                <button id="save-btn">Save</button>
+            </div>
+ 
+        </div>
+ 
     </div>
-
-    <button id="clear-btn">Clear Log</button>
-    <button id="start-btn">Start</button>
-    <button id="stop-btn">Stop</button>
-
-    <hr>
-    <h2>Save File to Machine</h2>
-    <div id="drop-zone" style="border: 2px dashed #999; padding: 20px; text-align: center;">
-        Drag & drop file here, or click to select
-        <input type="file" id="file-input" style="display: none;">
-    </div>
-    <button id="save-btn">Save</button>
-
+ 
     <script src="app.js"></script>
 </body>
 </html>

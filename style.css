@@ -1,0 +1,268 @@
+:root {
+    --bg: #1b1e22;
+    --panel-bg: #23272c;
+    --panel-border: #383e45;
+    --text-main: #e4e6e8;
+    --text-dim: #8a919a;
+    --accent: #e0a63e;
+    --accent2:#0099ff;
+    --accent-dim: #7a5f27;
+    --danger: #c1503f;
+    --gap: 1rem;
+    --edge: 2.4rem; /* ~1cm on a typical screen */
+
+    /* Control panel button sizing — edit these two to resize Start/Stop/Mode
+       without touching Clear/Save, which live outside .control-panel */
+    --ctrl-btn-padding: 1.2rem 1rem;
+    --ctrl-btn-font-size: 1rem;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text-main);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    padding: var(--edge);
+}
+
+h1, h2 {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin: 0 0 0.75rem 0;
+    color: var(--text-main);
+}
+
+h1 {
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+h2 {
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.app-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: var(--gap);
+    height: calc(100vh - (2 * var(--edge)));
+}
+
+/* LEFT: control panel */
+.control-panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* RIGHT: log + drop zone stacked */
+.right-column {
+    display: grid;
+    grid-template-rows: 2fr 1fr;
+    gap: var(--gap);
+    min-height: 0; /* required so grid children can shrink/scroll properly */
+}
+
+.panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Log viewer */
+#log-container {
+    flex: 1;
+    overflow-y: auto;
+    background: #14161a;
+    border: 1px solid var(--panel-border);
+    border-radius: 4px;
+    padding: 0.75rem;
+    min-height: 0;
+}
+
+#log-content {
+    margin: 0;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #d7dadd;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Buttons, general */
+button {
+    background: var(--panel-border);
+    color: var(--text-main);
+    border: 1px solid var(--panel-border);
+    border-radius: 4px;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+button:hover {
+    background: #3a4048;
+}
+
+button:active {
+    background: #454c55;
+}
+
+.button-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.button-row button {
+    flex: 1;
+    margin-bottom: 1.5rem
+}
+
+/* Sizing for ALL control-panel buttons (Mode, Start, Stop) — scoped so it
+   never touches Clear/Save, which live in .panel, not .control-panel.
+   Edit --ctrl-btn-padding / --ctrl-btn-font-size at the top to resize them. */
+.control-panel button {
+    padding: var(--ctrl-btn-padding);
+    font-size: var(--ctrl-btn-font-size);
+}
+
+.jog-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.jog-table td {
+    padding: 0.4rem;
+    text-align: center;
+}
+
+.axis-label {
+    color: var(--text-dim);
+    font-weight: 600;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.axis-value {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 1rem;
+    text-align: right;
+}
+
+.jog-btn {
+    width: 100%;
+    font-size: 1.2rem;
+    padding: 0.8rem;
+}
+
+button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+#start-btn {
+    background: #1f4d33;
+    border-color: #3a9e63;
+    color: #d9f7e3;
+}
+
+#start-btn:hover {
+    background: #2c6b46;
+}
+
+#stop-btn {
+    background: #5c2c25;
+    border-color: #c1503f;
+    color: #ffe0da;
+}
+
+#stop-btn:hover {
+    background: #7a3a2f;
+}
+
+#mode-btn {
+    background: var(--panel-border);
+    border-color: var(--panel-border);
+    color: var(--text-dim);
+    margin-bottom: 1.5rem;
+}
+
+#mode-btn.mode-auto {
+    background: #3a3420;
+    border-color: var(--accent);
+    color: #ffe9bd;
+}
+
+#mode-btn.mode-manual {
+    background: #1d3d47;
+    border-color: var(--accent2);
+    color: #55cff8;
+}
+
+/* Drop zone */
+#drop-zone {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 2px dashed var(--panel-border);
+    border-radius: 4px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+    padding: 1rem;
+}
+
+#drop-zone:hover {
+    border-color: var(--accent);
+    color: var(--text-main);
+}
+
+#drop-zone.drag-active {
+    border-color: var(--accent);
+    color: var(--text-main);
+    background: rgba(224, 166, 62, 0.08);
+}
+
+/* Shared style for secondary action buttons (Clear, Save) */
+.btn-action {
+    background: var(--panel-border);
+    border-color: var(--panel-border);
+}
+
+.btn-action:hover {
+    background: #3a4048;
+}
+
+#save-btn,
+#clear-btn {
+    margin-top: 0.75rem;
+    align-self: flex-start;
+}
