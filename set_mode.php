@@ -1,17 +1,21 @@
 <?php
 require 'config.php';
-
+ 
 $value = $_GET['value'] ?? '';
-
-if($value !== '0' && $value !== '1') {
+ 
+if ($value !== '0' && $value !== '1') {
     http_response_code(400);
     echo 'Invalid value';
     exit;
 }
-
-$xml = simplexml_load_file($COMMAND_XML_FILE_PATH);
-$xml->mode = $value;
-$xml->asXML($COMMAND_XML_FILE_PATH);
-
-echo ('OK');
+ 
+$result = call_bridge('/mode', 'POST', ['value' => $value]);
+ 
+if ($result === null) {
+    http_response_code(502);
+    echo 'Bridge unreachable';
+    exit;
+}
+ 
+echo $result;
 ?>
