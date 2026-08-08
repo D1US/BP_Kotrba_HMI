@@ -5,17 +5,17 @@ app = Flask(__name__)
  
 # ===== ADS connection settings =====
 # TODO: replace with your real PLC's AMS Net ID and port once known
-PLC_AMS_NET_ID = '5.x.x.x.x.1'
-PLC_PORT = 851  # standard TwinCAT 3 PLC runtime port
+PLC_AMS_NET_ID = '5.13.228.76.1.1'
+PLC_PORT = 801  # standard TwinCAT 3 PLC runtime port
  
 # ===== PLC symbol names (from your TwinCAT project) =====
 SYM_START = 'bStart'
 SYM_STOP = 'bStop'
 SYM_MODE = 'bMode'
  
-SYM_POS_X = 'iPos_x'
-SYM_POS_Y = 'iPos_y'
-SYM_POS_Z = 'iPos_z'
+SYM_POS_X = 'fPos_x'
+SYM_POS_Y = 'fPos_y'
+SYM_POS_Z = 'fPos_z'
  
 JOG_SYMBOLS = {
     ('x', 'plus'): 'bJog_x_plus',
