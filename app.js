@@ -1,219 +1,128 @@
-//Log a auto scroll
-const logContent = document.getElementById('log-content');
-const logContainer = document.getElementById('log-container');
+// ---------- Elements ----------
+const logView   = document.getElementById('logView');
+const jumpBtn    = document.getElementById('jumpBtn');
+const clearBtn   = document.getElementById('clearBtn');
+const dropZone   = document.getElementById('dropZone');
+const fileInput  = document.getElementById('fileInput');
+const saveBtn    = document.getElementById('saveBtn');
+const saveStatus = document.getElementById('saveStatus');
+const selectedFileName = document.getElementById('selectedFileName');
 
-function isScrolledToBottom(){
-    return logContainer.scrollHeight - logContainer.scrollTop - logContainer.clientHeight < 10;
-}
-
-function updateLog(){
-    const wasAtBottom = isScrolledToBottom();
-
-    fetch('get_log.php')
-        .then(Response => Response.text())
-        .then(text => {
-            logContent.textContent = text;
-
-            if(wasAtBottom) {
-                logContainer.scrollTop = logContainer.scrollHeight;
-            }
-        })
-        .catch(err => console.error('Log fetch failed:', err));
-}
-
-updateLog();
-setInterval(updateLog , 1000);
-
-//Tlačítka
-document.getElementById('clear-btn').addEventListener('click',() => {
-    fetch('clear_log.php')
-        .then(Response => Response.text())
-        .then(()=>{
-            logContent.textContent = '';
-        })
-        .catch(err => console.error('Clear failed:', err));
-});
-
-document.getElementById('start-btn').addEventListener('click', () => {
-    fetch('send_command.php?button=start')
-        .catch(err => console.error('Start command failed:', err));
-});
-
-document.getElementById('stop-btn').addEventListener('click', () => {
-    fetch('send_command.php?button=stop')
-        .catch(err => console.error('Stop command failed:', err));
-});
-
-//Drag and drop
-const dropZone = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
 let selectedFile = null;
 
-function isValidFile(file) {
-    return file.name.toLowerCase().endsWith('.nc');
+// ---------- Live log polling ----------
+
+// How close to the bottom (in px) counts as "still at the bottom".
+// A small tolerance so tiny rounding differences don't break auto-scroll.
+const BOTTOM_TOLERANCE = 15;
+
+function isScrolledToBottom() {
+  return logView.scrollHeight - logView.scrollTop - logView.clientHeight < BOTTOM_TOLERANCE;
 }
 
-dropZone.addEventListener('click', () => {
-    fileInput.click();
+async function pollLog() {
+  try {
+    const res = await fetch('get_log.php', { cache: 'no-store' });
+    const text = await res.text();
+
+    // Decide BEFORE updating content whether the user was at the bottom.
+    const wasAtBottom = isScrolledToBottom();
+
+    logView.textContent = text.length ? text : '(log is empty)';
+
+    if (wasAtBottom) {
+      // User was following the log live - keep following it.
+      logView.scrollTop = logView.scrollHeight;
+      jumpBtn.style.display = 'none';
+    } else {
+      // User has scrolled up to read history - leave them alone,
+      // just show a button so they can jump back down when ready.
+      jumpBtn.style.display = 'inline-block';
+    }
+  } catch (err) {
+    console.error('Failed to fetch log:', err);
+  }
+}
+
+jumpBtn.addEventListener('click', () => {
+  logView.scrollTop = logView.scrollHeight;
+  jumpBtn.style.display = 'none';
+});
+
+clearBtn.addEventListener('click', async () => {
+  clearBtn.disabled = true;
+  try {
+    await fetch('clear_log.php', { method: 'POST' });
+    // Reflect the clear immediately instead of waiting for next poll.
+    logView.textContent = '(log is empty)';
+    jumpBtn.style.display = 'none';
+  } catch (err) {
+    console.error('Failed to clear log:', err);
+  } finally {
+    clearBtn.disabled = false;
+  }
+});
+
+// Poll every 1 second.
+setInterval(pollLog, 1000);
+pollLog(); // initial load
+
+// ---------- Drag & drop / file picker save ----------
+
+function handleFileSelected(file) {
+  selectedFile = file;
+  selectedFileName.textContent = 'Selected: ' + file.name;
+  saveBtn.disabled = false;
+  saveStatus.textContent = '';
+}
+
+dropZone.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) {
+    handleFileSelected(fileInput.files[0]);
+  }
 });
 
 dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('drag-active');
+  e.preventDefault();
+  dropZone.classList.add('dragover');
 });
 
 dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('drag-active');
+  dropZone.classList.remove('dragover');
 });
 
 dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-active');
-
-    if (e.dataTransfer.files.length > 0) {
-        const file = e.dataTransfer.files[0];
-        if(!isValidFile(file)){
-            alert('Only .nc files are allowed');
-            return;
-        }
-        selectedFile = file;
-        dropZone.textContent = `Selected: ${selectedFile.name}`;
-    }
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) {
+    handleFileSelected(e.dataTransfer.files[0]);
+  }
 });
 
-fileInput.addEventListener('change',() => {
-    if(fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        if (!isValidFile(file)) {
-            alert('Only .nc files are allowed');
-            fileInput.value = '';
-            return;
-        }
-        selectedFile = file;
-        dropZone.textContent = `Selected: ${selectedFile.name}`;
-    }
-});
+saveBtn.addEventListener('click', async () => {
+  if (!selectedFile) return;
 
-document.getElementById('save-btn').addEventListener('click', () => {
-    if (!selectedFile) {
-        alert('No file selected');
-        return;
-    }
+  saveBtn.disabled = true;
+  saveStatus.textContent = 'Saving...';
 
-    const formData = new FormData();
-    formData.append('file',selectedFile);
+  const formData = new FormData();
+  // Field name MUST match what save_log.php expects: "uploadedFile".
+  formData.append('uploadedFile', selectedFile);
 
-    fetch('save_file.php', {
-        method: 'POST',
-        body: formData
-    })
-        .then(Response => Response.text())
-        .then(result => {
-            alert(result === 'OK' ? 'File saved successfuly' : 'Save Failed' + result);
-        })
-        .catch(err => console.error('Save request failed:', err));
-});
+  try {
+    const res = await fetch('save_log.php', { method: 'POST', body: formData });
+    const text = await res.text();
 
-
-//Mode Controll
-const modeBtn = document.getElementById('mode-btn');
-let currentMode = '0'; // '0' = manual, '1' = auto
-
-function renderModeButton() {
-    const isAuto = currentMode === '1';
-
-    if (isAuto) {
-        modeBtn.textContent = 'Mode: AUTO';
-        modeBtn.classList.add('mode-auto');
-        modeBtn.classList.remove('mode-manual');
+    if (res.ok && text.trim() === 'OK') {
+      saveStatus.textContent = 'Saved.';
     } else {
-        modeBtn.textContent = 'Mode: MANUAL';
-        modeBtn.classList.add('mode-manual');
-        modeBtn.classList.remove('mode-auto');
+      saveStatus.textContent = 'Save failed: ' + text;
     }
-
-    document.getElementById('start-btn').disabled = !isAuto;
-    document.getElementById('stop-btn').disabled = !isAuto;
-
-    document.querySelectorAll('.jog-btn').forEach(btn => {
-        btn.disabled = isAuto;
-    });
-}
-
-function loadInitialMode() {
-    fetch('get_mode.php')
-        .then(response => response.text())
-        .then(value => {
-            currentMode = value.trim();
-            renderModeButton();
-        })
-        .catch(err => console.error('Failed to load mode:', err));
-}
-
-modeBtn.addEventListener('click', () => {
-    const newMode = currentMode === '1' ? '0' : '1';
-
-    fetch(`set_mode.php?value=${newMode}`)
-        .then(response => response.text())
-        .then(result => {
-            if (result === 'OK') {
-                currentMode = newMode;
-                renderModeButton();
-            } else {
-                alert('Failed to change mode: ' + result);
-            }
-        })
-        .catch(err => console.error('Set mode failed:', err));
-});
-
-loadInitialMode();
-
-
-// ===== Manual jog controls (hold to move) =====
-document.querySelectorAll('.jog-btn').forEach(btn => {
-    const axis = btn.dataset.axis;
-    const dir = btn.dataset.dir;
-
-    function sendJog(state) {
-        fetch(`jog.php?axis=${axis}&dir=${dir}&state=${state}`)
-            .catch(err => console.error('Jog command failed:', err));
-    }
-
-    btn.addEventListener('mousedown', () => sendJog(1));
-    btn.addEventListener('mouseup', () => sendJog(0));
-    btn.addEventListener('mouseleave', () => sendJog(0)); // stops motion if pointer drags off while held
-    btn.addEventListener('touchstart', (e) => { e.preventDefault(); sendJog(1); });
-    btn.addEventListener('touchend', (e) => { e.preventDefault(); sendJog(0); });
-});
-
-// ===== Position display polling =====
-function updatePosition() {
-    fetch('get_position.php')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('pos-x').textContent = data.x;
-            document.getElementById('pos-y').textContent = data.y;
-            document.getElementById('pos-z').textContent = data.z;
-        })
-        .catch(err => console.error('Position fetch failed:', err));
-}
-
-updatePosition();
-setInterval(updatePosition, 1000);
-
-//Download log
-document.getElementById('download-btn').addEventListener('click', () => {
-    const blob = new Blob([logContent.textContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `machine_log_${timestamp}.log`;
-    a.click();
-
-    URL.revokeObjectURL(url);
+  } catch (err) {
+    saveStatus.textContent = 'Save failed: ' + err;
+  } finally {
+    saveBtn.disabled = false;
+  }
 });

@@ -140,17 +140,6 @@ button:active {
 
 .button-row button {
     flex: 1;
-    margin-bottom: 1.5rem
-}
-
-.log-btn-row {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-}
-
-.log-btn-row button {
-    flex: 1;
 }
 
 /* Sizing for ALL control-panel buttons (Mode, Start, Stop) — scoped so it
@@ -159,40 +148,6 @@ button:active {
 .control-panel button {
     padding: var(--ctrl-btn-padding);
     font-size: var(--ctrl-btn-font-size);
-}
-
-.jog-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.jog-table td {
-    padding: 0.4rem;
-    text-align: center;
-}
-
-.axis-label {
-    color: var(--text-dim);
-    font-weight: 600;
-    text-align: left;
-    font-size: 0.9rem;
-}
-
-.axis-value {
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 1rem;
-    text-align: right;
-}
-
-.jog-btn {
-    width: 100%;
-    font-size: 1.2rem;
-    padding: 0.8rem;
-}
-
-button:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
 }
 
 #start-btn {
@@ -219,7 +174,6 @@ button:disabled {
     background: var(--panel-border);
     border-color: var(--panel-border);
     color: var(--text-dim);
-    margin-bottom: 1.5rem;
 }
 
 #mode-btn.mode-auto {
@@ -271,35 +225,8 @@ button:disabled {
     background: #3a4048;
 }
 
-#save-btn{
+#save-btn,
+#clear-btn {
     margin-top: 0.75rem;
-}
-
-@media (max-width: 768px) {
-    html, body {
-        overflow-y: auto;
-        overflow-x: hidden;
-        height: auto;
-    }
-
-    body {
-        padding: 1rem;
-    }
-
-    .app-layout {
-        display: flex;
-        flex-direction: column;
-        height: auto;
-    }
-
-    .right-column {
-        display: flex;
-        flex-direction: column;
-        height: auto;
-    }
-
-    #log-container {
-        height: 250px; /* fixed height so it doesn't try to fill an undefined space */
-        flex: none;
-    }
+    align-self: flex-start;
 }
