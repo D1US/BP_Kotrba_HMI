@@ -56,15 +56,17 @@ function wireHoldButton(el, onPress, onRelease) {
     el.addEventListener('touchend', (e) => { e.preventDefault(); queue(onRelease); });
 }
 
-function wireCommandButton(id, buttonName) {
+// One generic function sends every momentary control (Start, Stop, Jog)
+// through the single control.php endpoint, using a "key" that matches
+// bridge.py's WRITE_SYMBOLS exactly (e.g. "start", "jog_x_plus").
+function sendControl(key, state) {
+    return fetch(`control.php?key=${key}&state=${state}`)
+        .catch(err => console.error(`${key} command failed:`, err));
+}
+
+function wireCommandButton(id, key) {
     const btn = document.getElementById(id);
-
-    function sendState(state) {
-        return fetch(`send_command.php?button=${buttonName}&state=${state}`)
-            .catch(err => console.error(`${buttonName} command failed:`, err));
-    }
-
-    wireHoldButton(btn, () => sendState(1), () => sendState(0));
+    wireHoldButton(btn, () => sendControl(key, 1), () => sendControl(key, 0));
 }
 
 wireCommandButton('start-btn', 'start');
@@ -198,15 +200,8 @@ loadInitialMode();
 // ===== Manual jog controls (hold to move) — uses the same wireHoldButton
 // helper as Start/Stop above, so both behave identically by construction =====
 document.querySelectorAll('.jog-btn').forEach(btn => {
-    const axis = btn.dataset.axis;
-    const dir = btn.dataset.dir;
-
-    function sendJog(state) {
-        return fetch(`jog.php?axis=${axis}&dir=${dir}&state=${state}`)
-            .catch(err => console.error('Jog command failed:', err));
-    }
-
-    wireHoldButton(btn, () => sendJog(1), () => sendJog(0));
+    const key = `jog_${btn.dataset.axis}_${btn.dataset.dir}`;
+    wireHoldButton(btn, () => sendControl(key, 1), () => sendControl(key, 0));
 });
 
 // ===== Position display polling =====
