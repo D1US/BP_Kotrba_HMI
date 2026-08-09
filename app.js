@@ -1,3 +1,5 @@
+//V3
+
 //Log a auto scroll
 const logContent = document.getElementById('log-content');
 const logContainer = document.getElementById('log-container');
