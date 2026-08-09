@@ -2,11 +2,12 @@
 require 'config.php';
  
 $button = $_GET['button'] ?? '';
+$state = $_GET['state'] ?? '';
 $allowed = ['start', 'stop'];
  
-if (!in_array($button, $allowed)) {
+if (!in_array($button, $allowed) || ($state !== '0' && $state !== '1')) {
     http_response_code(400);
-    echo 'Invalid button';
+    echo 'Invalid parameters';
     exit;
 }
  
@@ -25,7 +26,7 @@ if (trim($currentMode) !== '1') {
     exit;
 }
  
-$result = call_bridge('/command', 'POST', ['button' => $button]);
+$result = call_bridge('/command', 'POST', ['button' => $button, 'state' => $state]);
  
 if ($result === null) {
     http_response_code(502);
