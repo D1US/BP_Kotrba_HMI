@@ -36,20 +36,31 @@ document.getElementById('clear-btn').addEventListener('click',() => {
 
 // ===== Momentary/hold buttons: Start, Stop, and Jog all share this one
 // wiring function - press sends state=1, release sends state=0. This is
-// the single code path for all press/release controls in the whole page. =====
+// the single code path for all press/release controls in the whole page.
+//
+// The two requests are chained through one promise per button so that
+// "release" can never reach the server before "press" has finished - on
+// a fast click, two independent fetches can race and finish out of
+// order, leaving the value stuck at 1. Chaining forces strict ordering. =====
 function wireHoldButton(el, onPress, onRelease) {
-    el.addEventListener('mousedown', onPress);
-    el.addEventListener('mouseup', onRelease);
-    el.addEventListener('mouseleave', onRelease);
-    el.addEventListener('touchstart', (e) => { e.preventDefault(); onPress(); });
-    el.addEventListener('touchend', (e) => { e.preventDefault(); onRelease(); });
+    let pending = Promise.resolve();
+
+    function queue(action) {
+        pending = pending.then(action).catch(() => {});
+    }
+
+    el.addEventListener('mousedown', () => queue(onPress));
+    el.addEventListener('mouseup', () => queue(onRelease));
+    el.addEventListener('mouseleave', () => queue(onRelease));
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); queue(onPress); });
+    el.addEventListener('touchend', (e) => { e.preventDefault(); queue(onRelease); });
 }
 
 function wireCommandButton(id, buttonName) {
     const btn = document.getElementById(id);
 
     function sendState(state) {
-        fetch(`send_command.php?button=${buttonName}&state=${state}`)
+        return fetch(`send_command.php?button=${buttonName}&state=${state}`)
             .catch(err => console.error(`${buttonName} command failed:`, err));
     }
 
@@ -191,7 +202,7 @@ document.querySelectorAll('.jog-btn').forEach(btn => {
     const dir = btn.dataset.dir;
 
     function sendJog(state) {
-        fetch(`jog.php?axis=${axis}&dir=${dir}&state=${state}`)
+        return fetch(`jog.php?axis=${axis}&dir=${dir}&state=${state}`)
             .catch(err => console.error('Jog command failed:', err));
     }
 
