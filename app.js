@@ -24,53 +24,37 @@ function updateLog(){
 updateLog();
 setInterval(updateLog , 1000);
 
-//Tlacitka
-document.getElementById('clear-btn').addEventListener('click',() => {
-    fetch('clear_log.php')
-        .then(Response => Response.text())
-        .then(()=>{
-            logContent.textContent = '';
-        })
-        .catch(err => console.error('Clear failed:', err));
-});
-
-// ===== Momentary/hold buttons: Start, Stop, and Jog all share this one
-// wiring function - press sends state=1, release sends state=0. This is
-// the single code path for all press/release controls in the whole page.
-//
-// The two requests are chained through one promise per button so that
-// "release" can never reach the server before "press" has finished - on
-// a fast click, two independent fetches can race and finish out of
-// order, leaving the value stuck at 1. Chaining forces strict ordering. =====
-function wireHoldButton(el, onPress, onRelease) {
-    let pending = Promise.resolve();
-
-    function queue(action) {
-        pending = pending.then(action).catch(() => {});
+//Tlačítka
+const startBtn = document.getElementById('start-btn');
+if (startBtn) {
+    function sendStart(state) {
+        fetch(`send_command.php?button=start&state=${state}`)
+            .catch(err => console.error('Start command failed:', err));
     }
 
-    el.addEventListener('mousedown', () => queue(onPress));
-    el.addEventListener('mouseup', () => queue(onRelease));
-    el.addEventListener('mouseleave', () => queue(onRelease));
-    el.addEventListener('touchstart', (e) => { e.preventDefault(); queue(onPress); });
-    el.addEventListener('touchend', (e) => { e.preventDefault(); queue(onRelease); });
+    startBtn.addEventListener('mousedown', () => sendStart(1));
+    startBtn.addEventListener('mouseup', () => sendStart(0));
+    startBtn.addEventListener('mouseleave', () => sendStart(0));
+    startBtn.addEventListener('touchstart', (e) => { e.preventDefault(); sendStart(1); });
+    startBtn.addEventListener('touchend', (e) => { e.preventDefault(); sendStart(0); });
+    startBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); sendStart(0); });
 }
 
-// One generic function sends every momentary control (Start, Stop, Jog)
-// through the single control.php endpoint, using a "key" that matches
-// bridge.py's WRITE_SYMBOLS exactly (e.g. "start", "jog_x_plus").
-function sendControl(key, state) {
-    return fetch(`control.php?key=${key}&state=${state}`)
-        .catch(err => console.error(`${key} command failed:`, err));
-}
+// --- Stop Button ---
+const stopBtn = document.getElementById('stop-btn');
+if (stopBtn) {
+    function sendStop(state) {
+        fetch(`send_command.php?button=stop&state=${state}`)
+            .catch(err => console.error('Stop command failed:', err));
+    }
 
-function wireCommandButton(id, key) {
-    const btn = document.getElementById(id);
-    wireHoldButton(btn, () => sendControl(key, 1), () => sendControl(key, 0));
+    stopBtn.addEventListener('mousedown', () => sendStop(1));
+    stopBtn.addEventListener('mouseup', () => sendStop(0));
+    stopBtn.addEventListener('mouseleave', () => sendStop(0));
+    stopBtn.addEventListener('touchstart', (e) => { e.preventDefault(); sendStop(1); });
+    stopBtn.addEventListener('touchend', (e) => { e.preventDefault(); sendStop(0); });
+    stopBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); sendStop(0); });
 }
-
-wireCommandButton('start-btn', 'start');
-wireCommandButton('stop-btn', 'stop');
 
 //Drag and drop
 const dropZone = document.getElementById('drop-zone');
@@ -131,13 +115,10 @@ document.getElementById('save-btn').addEventListener('click', () => {
     const formData = new FormData();
     formData.append('file',selectedFile);
 
-    fetch('save_file.php', {
-        method: 'POST',
-        body: formData
-    })
-        .then(Response => Response.text())
+    fetch('save_file.php', { method: 'POST', body: formData })
+        .then(res => res.text())
         .then(result => {
-            alert(result === 'OK' ? 'File saved successfuly' : 'Save Failed' + result);
+            alert(result === 'OK' ? 'File saved successfully' : 'Save Failed: ' + result);
         })
         .catch(err => console.error('Save request failed:', err));
 });
@@ -197,11 +178,22 @@ modeBtn.addEventListener('click', () => {
 loadInitialMode();
 
 
-// ===== Manual jog controls (hold to move) — uses the same wireHoldButton
-// helper as Start/Stop above, so both behave identically by construction =====
+// ===== Manual jog controls (hold to move) =====
 document.querySelectorAll('.jog-btn').forEach(btn => {
-    const key = `jog_${btn.dataset.axis}_${btn.dataset.dir}`;
-    wireHoldButton(btn, () => sendControl(key, 1), () => sendControl(key, 0));
+    const axis = btn.dataset.axis;
+    const dir = btn.dataset.dir;
+
+    function sendJog(state) {
+        fetch(`jog.php?axis=${axis}&dir=${dir}&state=${state}`)
+            .catch(err => console.error('Jog command failed:', err));
+    }
+
+    btn.addEventListener('mousedown', () => sendJog(1));
+    btn.addEventListener('mouseup', () => sendJog(0));
+    btn.addEventListener('mouseleave', () => sendJog(0)); // stops motion if pointer drags off while held
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); sendJog(1); });
+    btn.addEventListener('touchend', (e) => { e.preventDefault(); sendJog(0); });
+    btn.addEventListener('touchcancel', (e) => { e.preventDefault(); sendJog(0); }); // interrupted touch still releases
 });
 
 // ===== Position display polling =====
@@ -209,6 +201,12 @@ function updatePosition() {
     fetch('get_position.php')
         .then(response => response.json())
         .then(data => {
+            if (data.error) {
+                document.getElementById('pos-x').textContent = '—';
+                document.getElementById('pos-y').textContent = '—';
+                document.getElementById('pos-z').textContent = '—';
+                return;
+            }
             document.getElementById('pos-x').textContent = data.x;
             document.getElementById('pos-y').textContent = data.y;
             document.getElementById('pos-z').textContent = data.z;
