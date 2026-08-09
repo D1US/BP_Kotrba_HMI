@@ -24,7 +24,7 @@ function updateLog(){
 updateLog();
 setInterval(updateLog , 1000);
 
-//Tlačítka
+//Tlacitka
 document.getElementById('clear-btn').addEventListener('click',() => {
     fetch('clear_log.php')
         .then(Response => Response.text())
@@ -34,15 +34,30 @@ document.getElementById('clear-btn').addEventListener('click',() => {
         .catch(err => console.error('Clear failed:', err));
 });
 
-document.getElementById('start-btn').addEventListener('click', () => {
-    fetch('send_command.php?button=start')
-        .catch(err => console.error('Start command failed:', err));
-});
+// ===== Momentary/hold buttons: Start, Stop, and Jog all share this one
+// wiring function - press sends state=1, release sends state=0. This is
+// the single code path for all press/release controls in the whole page. =====
+function wireHoldButton(el, onPress, onRelease) {
+    el.addEventListener('mousedown', onPress);
+    el.addEventListener('mouseup', onRelease);
+    el.addEventListener('mouseleave', onRelease);
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); onPress(); });
+    el.addEventListener('touchend', (e) => { e.preventDefault(); onRelease(); });
+}
 
-document.getElementById('stop-btn').addEventListener('click', () => {
-    fetch('send_command.php?button=stop')
-        .catch(err => console.error('Stop command failed:', err));
-});
+function wireCommandButton(id, buttonName) {
+    const btn = document.getElementById(id);
+
+    function sendState(state) {
+        fetch(`send_command.php?button=${buttonName}&state=${state}`)
+            .catch(err => console.error(`${buttonName} command failed:`, err));
+    }
+
+    wireHoldButton(btn, () => sendState(1), () => sendState(0));
+}
+
+wireCommandButton('start-btn', 'start');
+wireCommandButton('stop-btn', 'stop');
 
 //Drag and drop
 const dropZone = document.getElementById('drop-zone');
@@ -169,7 +184,8 @@ modeBtn.addEventListener('click', () => {
 loadInitialMode();
 
 
-// ===== Manual jog controls (hold to move) =====
+// ===== Manual jog controls (hold to move) — uses the same wireHoldButton
+// helper as Start/Stop above, so both behave identically by construction =====
 document.querySelectorAll('.jog-btn').forEach(btn => {
     const axis = btn.dataset.axis;
     const dir = btn.dataset.dir;
@@ -179,11 +195,7 @@ document.querySelectorAll('.jog-btn').forEach(btn => {
             .catch(err => console.error('Jog command failed:', err));
     }
 
-    btn.addEventListener('mousedown', () => sendJog(1));
-    btn.addEventListener('mouseup', () => sendJog(0));
-    btn.addEventListener('mouseleave', () => sendJog(0)); // stops motion if pointer drags off while held
-    btn.addEventListener('touchstart', (e) => { e.preventDefault(); sendJog(1); });
-    btn.addEventListener('touchend', (e) => { e.preventDefault(); sendJog(0); });
+    wireHoldButton(btn, () => sendJog(1), () => sendJog(0));
 });
 
 // ===== Position display polling =====
