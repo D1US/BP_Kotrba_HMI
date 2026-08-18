@@ -130,6 +130,9 @@ document.getElementById('save-btn').addEventListener('click', () => {
 const modeBtn = document.getElementById('mode-btn');
 let currentMode = '0'; // '0' = manual, '1' = auto
 
+const autoControls = document.getElementById('auto-controls');
+const manualControls = document.getElementById('manual-controls');
+
 function renderModeButton() {
     const isAuto = currentMode === '1';
 
@@ -143,10 +146,17 @@ function renderModeButton() {
         modeBtn.classList.remove('mode-auto');
     }
 
+    // Swap which control section is shown entirely, rather than just
+    // graying out the inactive one.
+    autoControls.classList.toggle('hidden', !isAuto);
+    manualControls.classList.toggle('hidden', isAuto);
+
+    // Keep buttons disabled too as a safety net in case something tries
+    // to trigger them while hidden (e.g. a stray keyboard/script event).
     document.getElementById('start-btn').disabled = !isAuto;
     document.getElementById('stop-btn').disabled = !isAuto;
 
-    document.querySelectorAll('.jog-btn').forEach(btn => {
+    document.querySelectorAll('.jog-btn, .axis-toggle, .axis-action-btn').forEach(btn => {
         btn.disabled = isAuto;
     });
 }
@@ -198,6 +208,68 @@ document.querySelectorAll('.jog-btn').forEach(btn => {
     btn.addEventListener('touchcancel', (e) => { e.preventDefault(); sendJog(0); }); // interrupted touch still releases
 });
 
+// ===== Axis toggle buttons (X/Y/Z labels double as hold-value toggles) =====
+const axisToggleState = { x: '0', y: '0', z: '0' };
+
+function renderAxisToggle(axis) {
+    const btn = document.getElementById(`axis-toggle-${axis}`);
+    if (!btn) return;
+    btn.classList.toggle('active', axisToggleState[axis] === '1');
+}
+
+function loadInitialAxisToggles() {
+    fetch('get_axis.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) return;
+            ['x', 'y', 'z'].forEach(axis => {
+                axisToggleState[axis] = data[axis];
+                renderAxisToggle(axis);
+            });
+        })
+        .catch(err => console.error('Failed to load axis toggles:', err));
+}
+
+document.querySelectorAll('.axis-toggle').forEach(btn => {
+    const axis = btn.dataset.axis;
+
+    btn.addEventListener('click', () => {
+        const newValue = axisToggleState[axis] === '1' ? '0' : '1';
+
+        fetch(`set_axis.php?axis=${axis}&value=${newValue}`)
+            .then(response => response.text())
+            .then(result => {
+                if (result === 'OK') {
+                    axisToggleState[axis] = newValue;
+                    renderAxisToggle(axis);
+                } else {
+                    alert('Failed to set axis: ' + result);
+                }
+            })
+            .catch(err => console.error('Axis toggle failed:', err));
+    });
+});
+
+loadInitialAxisToggles();
+
+// ===== Per-axis Reset / Stop (hold, same pattern as jog +/-) =====
+document.querySelectorAll('.axis-action-btn').forEach(btn => {
+    const axis = btn.dataset.axis;
+    const action = btn.dataset.action;
+
+    function sendAxisAction(state) {
+        fetch(`axis_action.php?axis=${axis}&action=${action}&state=${state}`)
+            .catch(err => console.error('Axis action failed:', err));
+    }
+
+    btn.addEventListener('mousedown', () => sendAxisAction(1));
+    btn.addEventListener('mouseup', () => sendAxisAction(0));
+    btn.addEventListener('mouseleave', () => sendAxisAction(0));
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); sendAxisAction(1); });
+    btn.addEventListener('touchend', (e) => { e.preventDefault(); sendAxisAction(0); });
+    btn.addEventListener('touchcancel', (e) => { e.preventDefault(); sendAxisAction(0); });
+});
+
 // ===== Position display polling =====
 function updatePosition() {
     fetch('get_position.php')
@@ -218,6 +290,40 @@ function updatePosition() {
 
 updatePosition();
 setInterval(updatePosition, 1000);
+
+// Clear log
+document.getElementById('clear-btn').addEventListener('click', () => {
+    fetch('clear_log.php')
+        .then(res => res.text())
+        .then(result => {
+            if (result === 'OK') {
+                updateLog();
+            } else {
+                alert('Failed to clear log: ' + result);
+            }
+        })
+        .catch(err => console.error('Clear log failed:', err));
+});
+
+// Settings drawer
+const settingsBtn = document.getElementById('settings-btn');
+const settingsPanel = document.getElementById('settings-panel');
+const settingsBackdrop = document.getElementById('settings-backdrop');
+const settingsCloseBtn = document.getElementById('settings-close-btn');
+
+function openSettings() {
+    settingsPanel.classList.add('open');
+    settingsBackdrop.classList.add('open');
+}
+
+function closeSettings() {
+    settingsPanel.classList.remove('open');
+    settingsBackdrop.classList.remove('open');
+}
+
+settingsBtn.addEventListener('click', openSettings);
+settingsCloseBtn.addEventListener('click', closeSettings);
+settingsBackdrop.addEventListener('click', closeSettings);
 
 //Download log
 document.getElementById('download-btn').addEventListener('click', () => {

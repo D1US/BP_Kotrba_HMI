@@ -65,7 +65,7 @@ h2 {
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: 6px;
-    padding: 1.25rem;
+    padding: 3rem 1.25rem 1.25rem 1.25rem; /* extra top space clears the fixed settings gear button */
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -178,6 +178,38 @@ button:active {
     font-size: 0.9rem;
 }
 
+.axis-toggle {
+    width: 100%;
+    font-size: 0.9rem;
+    padding: 0.5rem;
+}
+
+.axis-toggle.active {
+    background: #1f4d33;
+    border-color: #3a9e63;
+    color: #d9f7e3;
+}
+
+.axis-toggle.active:hover {
+    background: #2c6b46;
+}
+
+.axis-action-btn {
+    width: 100%;
+    font-size: 0.75rem;
+    padding: 0.5rem;
+}
+
+.axis-action-btn.axis-stop {
+    background: #5c2c25;
+    border-color: #c1503f;
+    color: #ffe0da;
+}
+
+.axis-action-btn.axis-stop:hover {
+    background: #7a3a2f;
+}
+
 .axis-value {
     font-family: 'Consolas', 'Courier New', monospace;
     font-size: 1rem;
@@ -275,6 +307,109 @@ button:disabled {
     margin-top: 0.75rem;
 }
 
+#auto-controls.hidden,
+#manual-controls.hidden {
+    display: none;
+}
+
+/* ===== Settings button + drawer ===== */
+
+#settings-btn {
+    position: fixed;
+    top: var(--edge);
+    left: var(--edge);
+    z-index: 20;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    border-radius: 6px;
+}
+
+#settings-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 90;
+}
+
+#settings-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#settings-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 320px;
+    max-width: 85vw;
+    background: var(--panel-bg);
+    border-right: 1px solid var(--panel-border);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.35);
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+#settings-panel.open {
+    transform: translateX(0);
+}
+
+.settings-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.25rem 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--panel-border);
+}
+
+.settings-panel-header h1 {
+    margin: 0;
+}
+
+.settings-panel-content {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.settings-empty {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+}
+
+.icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.4rem;
+    line-height: 1;
+    padding: 0.2rem 0.5rem;
+}
+
+.icon-btn:hover {
+    background: transparent;
+    color: var(--text-main);
+}
+
 @media (max-width: 768px) {
     html, body {
         overflow-y: auto;
@@ -301,5 +436,9 @@ button:disabled {
     #log-container {
         height: 250px; /* fixed height so it doesn't try to fill an undefined space */
         flex: none;
+    }
+
+    .control-panel {
+        padding-top: 4.5rem; /* body padding shrinks here but the gear button stays put, so needs more clearance */
     }
 }

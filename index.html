@@ -7,46 +7,80 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <!-- Settings drawer (slides in from the left, sits above everything else) -->
+    <div id="settings-backdrop"></div>
+    <div id="settings-panel">
+        <div class="settings-panel-header">
+            <h1>Settings</h1>
+            <button id="settings-close-btn" class="icon-btn" aria-label="Close settings">&times;</button>
+        </div>
+        <div class="settings-panel-content">
+            <!-- Placeholder — real settings sections get added here later.
+                 Suggested pattern for a new section:
+                 <div class="settings-section">
+                     <h2>Section Name</h2>
+                     ... fields/buttons ...
+                 </div>
+            -->
+            <p class="settings-empty">No settings yet.</p>
+        </div>
+    </div>
+
+    <button id="settings-btn" aria-label="Open settings">&#9881;</button>
  
     <div class="app-layout">
  
         <!-- LEFT: control panel -->
         <div class="control-panel">
-            <h1>Controls</h1>
             <button id="mode-btn">Mode Manual</button>
-            <h2>Automat</h2>
-            <div class="button-row">
-                <button id="start-btn">Start</button>
-                <button id="stop-btn">Stop</button>
+            <div id="auto-controls">
+                <div class="button-row">
+                    <button id="start-btn">Start</button>
+                    <button id="stop-btn">Stop</button>
+                </div>
             </div>
 
-            <h2>Manual</h2>
-            <table class="jog-table">
-                <tr>
-                    <td class="axis-label">X</td>
-                    <td class="axis-value" id="pos-x">0.000</td>
-                </tr>
-                <tr>
-                    <td><button class="jog-btn" data-axis="x" data-dir="plus">+</button></td>
-                    <td><button class="jog-btn" data-axis="x" data-dir="minus">-</button></td>
-                </tr>
-                <tr>
-                    <td class="axis-label">Y</td>
-                    <td class="axis-value" id="pos-y">0.000</td>
-                </tr>
-                <tr>
-                    <td><button class="jog-btn" data-axis="y" data-dir="plus">+</button></td>
-                    <td><button class="jog-btn" data-axis="y" data-dir="minus">-</button></td>
-                </tr>
-                <tr>
-                    <td class="axis-label">Z</td>
-                    <td class="axis-value" id="pos-z">0.000</td>
-                </tr>
-                <tr>
-                    <td><button class="jog-btn" data-axis="z" data-dir="plus">+</button></td>
-                    <td><button class="jog-btn" data-axis="z" data-dir="minus">-</button></td>
-                </tr>
-            </table>
+            <div id="manual-controls">
+                <table class="jog-table">
+                    <tr>
+                        <td><button class="axis-toggle" id="axis-toggle-x" data-axis="x">X</button></td>
+                        <td class="axis-value" id="pos-x">0.000</td>
+                    </tr>
+                    <tr>
+                        <td><button class="jog-btn" data-axis="x" data-dir="plus">+</button></td>
+                        <td><button class="jog-btn" data-axis="x" data-dir="minus">-</button></td>
+                    </tr>
+                    <tr>
+                        <td><button class="axis-action-btn axis-reset" data-axis="x" data-action="reset">Reset</button></td>
+                        <td><button class="axis-action-btn axis-stop" data-axis="x" data-action="stop">Stop</button></td>
+                    </tr>
+                    <tr>
+                        <td><button class="axis-toggle" id="axis-toggle-y" data-axis="y">Y</button></td>
+                        <td class="axis-value" id="pos-y">0.000</td>
+                    </tr>
+                    <tr>
+                        <td><button class="jog-btn" data-axis="y" data-dir="plus">+</button></td>
+                        <td><button class="jog-btn" data-axis="y" data-dir="minus">-</button></td>
+                    </tr>
+                    <tr>
+                        <td><button class="axis-action-btn axis-reset" data-axis="y" data-action="reset">Reset</button></td>
+                        <td><button class="axis-action-btn axis-stop" data-axis="y" data-action="stop">Stop</button></td>
+                    </tr>
+                    <tr>
+                        <td><button class="axis-toggle" id="axis-toggle-z" data-axis="z">Z</button></td>
+                        <td class="axis-value" id="pos-z">0.000</td>
+                    </tr>
+                    <tr>
+                        <td><button class="jog-btn" data-axis="z" data-dir="plus">+</button></td>
+                        <td><button class="jog-btn" data-axis="z" data-dir="minus">-</button></td>
+                    </tr>
+                    <tr>
+                        <td><button class="axis-action-btn axis-reset" data-axis="z" data-action="reset">Reset</button></td>
+                        <td><button class="axis-action-btn axis-stop" data-axis="z" data-action="stop">Stop</button></td>
+                    </tr>
+                </table>
+            </div>
         </div>
  
         <!-- RIGHT: log (2/3) + drop zone (1/3) -->
