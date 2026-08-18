@@ -200,6 +200,20 @@ button:active {
     padding: 0.5rem;
 }
 
+.jog-table tr.axis-block-end td {
+    padding-bottom: 3rem;
+}
+
+.axis-action-btn.axis-reset {
+    background: #4a3f12;
+    border-color: #f2c94c;
+    color: #fff6da;
+}
+
+.axis-action-btn.axis-reset:hover {
+    background: #5c4f18;
+}
+
 .axis-action-btn.axis-stop {
     background: #5c2c25;
     border-color: #c1503f;
