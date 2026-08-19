@@ -16,7 +16,7 @@ $SAVE_FILE_PATH = __DIR__ . '/data/saved/plc_upload.nc';
 //               state are read from and written to a local XML file
 //               (see $MOCK_STATE_FILE below), so you can click around
 //               the whole frontend on its own.
-$BACKEND_MODE = 'mock';   // 'bridge' | 'mock'
+$BACKEND_MODE = 'bridge';   // 'bridge' | 'mock'
 
 // BRIDGE_ENV: only matters when BACKEND_MODE = 'bridge'. Picks which
 // host to reach the bridge on.
@@ -24,7 +24,7 @@ $BACKEND_MODE = 'mock';   // 'bridge' | 'mock'
 //               via host.docker.internal (see extra_hosts in docker-compose.yml)
 //   'local'  -> everything (this web app AND bridge.py) running directly
 //               on the same machine, no Docker involved -> use localhost
-$BRIDGE_ENV = 'local';     // 'docker' | 'local'
+$BRIDGE_ENV = 'docker';     // 'docker' | 'local'
 
 // Where the mock state file lives when BACKEND_MODE = 'mock'.
 // Auto-created with sane defaults (mode=manual, position=0,0,0) the
@@ -33,6 +33,117 @@ $MOCK_STATE_FILE = __DIR__ . '/data/mock_state.xml';
 
 $BRIDGE_HOST = ($BRIDGE_ENV === 'docker') ? 'host.docker.internal' : 'localhost';
 $BRIDGE_URL  = 'http://' . $BRIDGE_HOST . ':5000';
+
+// =====================================================================
+// FTP (machine controller file transfer)
+// TODO: replace these with the real FTP host/credentials once known.
+// =====================================================================
+$FTP_HOST            = 'ftp.machine.local'; // TODO: real FTP host/IP of the machine controller
+$FTP_PORT             = 21;
+$FTP_USERNAME         = 'ftpuser';          // TODO: real FTP username
+$FTP_PASSWORD         = 'ftppassword';      // TODO: real FTP password
+
+// Where the .nc program gets uploaded TO on the controller (see save_file.php)
+$FTP_REMOTE_DIR       = '/';                // TODO: remote directory to upload into
+$FTP_REMOTE_FILENAME  = 'plc_upload.nc';    // filename the machine controller expects
+
+// Where the machine log gets pulled FROM on the controller (see sync_log.php).
+// The controller (Windows CE 6.0 IPC) writes its own log there; this app
+// doesn't write to it, only reads it periodically via FTP.
+$FTP_LOG_REMOTE_DIR      = '/';             // TODO: remote directory the log file lives in
+$FTP_LOG_REMOTE_FILENAME = 'machine.log';   // TODO: real log filename on the IPC
+
+/**
+ * Opens an FTP connection and logs in. Returns the connection resource,
+ * or false on failure. Shared by the upload and download helpers below
+ * so the connect/login/passive-mode logic only lives in one place.
+ */
+function ftp_connect_and_login() {
+    global $FTP_HOST, $FTP_PORT, $FTP_USERNAME, $FTP_PASSWORD;
+
+    $conn = @ftp_connect($FTP_HOST, $FTP_PORT, 5);
+    if ($conn === false) {
+        return false;
+    }
+
+    if (!@ftp_login($conn, $FTP_USERNAME, $FTP_PASSWORD)) {
+        ftp_close($conn);
+        return false;
+    }
+
+    // Most machine controllers sit behind NAT/firewalls that only allow
+    // the client to initiate the data connection too, so passive mode.
+    ftp_pasv($conn, true);
+
+    return $conn;
+}
+
+/**
+ * Uploads a local file to the machine controller's FTP server.
+ * Returns true on success, false on failure.
+ *
+ * In mock mode (BACKEND_MODE = 'mock') this is skipped entirely and
+ * always returns true, since there's no real controller/FTP server to
+ * talk to while testing.
+ */
+function ftp_upload_file($localPath) {
+    global $FTP_REMOTE_DIR, $FTP_REMOTE_FILENAME, $BACKEND_MODE;
+
+    if ($BACKEND_MODE === 'mock') {
+        return true;
+    }
+
+    $conn = ftp_connect_and_login();
+    if ($conn === false) {
+        return false;
+    }
+
+    $remotePath = rtrim($FTP_REMOTE_DIR, '/') . '/' . $FTP_REMOTE_FILENAME;
+    $ok = @ftp_put($conn, $remotePath, $localPath, FTP_BINARY);
+
+    ftp_close($conn);
+
+    return $ok;
+}
+
+/**
+ * Downloads the machine log from the controller's FTP server and writes
+ * it to $LOG_FILE_PATH, overwriting whatever was there before. This is
+ * meant to be called periodically by sync_log.php (a background process),
+ * NOT on every request - get_log.php just reads the local copy this
+ * leaves behind, so the frontend's 1-second polling never touches the
+ * network itself.
+ *
+ * Returns true on success, false on failure. Skipped (returns true) in
+ * mock mode, same as ftp_upload_file().
+ */
+function ftp_download_log_file() {
+    global $FTP_LOG_REMOTE_DIR, $FTP_LOG_REMOTE_FILENAME, $LOG_FILE_PATH, $BACKEND_MODE;
+
+    if ($BACKEND_MODE === 'mock') {
+        return true;
+    }
+
+    $conn = ftp_connect_and_login();
+    if ($conn === false) {
+        return false;
+    }
+
+    $remotePath = rtrim($FTP_LOG_REMOTE_DIR, '/') . '/' . $FTP_LOG_REMOTE_FILENAME;
+
+    $dir = dirname($LOG_FILE_PATH);
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+
+    // Log is plain text, so ASCII mode (handles line-ending translation
+    // correctly, unlike the binary .nc transfer above).
+    $ok = @ftp_get($conn, $LOG_FILE_PATH, $remotePath, FTP_ASCII);
+
+    ftp_close($conn);
+
+    return $ok;
+}
 
 /**
  * Calls the local Python ADS bridge and returns the raw response body.
@@ -121,6 +232,13 @@ function mock_bridge($path, $method, $params) {
             }
             break;
 
+        case '/clear_log':
+            if ($method === 'POST') {
+                // Nothing to pulse in mock mode - just acknowledge it.
+                return 'OK';
+            }
+            break;
+
         case '/jog':
             if ($method === 'POST') {
                 $axis  = $params['axis'] ?? '';
@@ -187,6 +305,25 @@ function mock_bridge($path, $method, $params) {
                 return 'OK';
             }
             break;
+
+        case '/settings':
+            if ($method === 'GET') {
+                return json_encode([
+                    'thickness' => (float)$state->settings['thickness'],
+                    'speed' => (float)$state->settings['speed'],
+                ]);
+            }
+            if ($method === 'POST') {
+                $key = $params['key'] ?? '';
+                $value = $params['value'] ?? '';
+                if (!in_array($key, ['thickness', 'speed']) || !is_numeric($value) || (float)$value < 0) {
+                    return null;
+                }
+                $state->settings[$key] = $value;
+                mock_state_save($MOCK_STATE_FILE, $state);
+                return 'OK';
+            }
+            break;
     }
 
     return null;
@@ -195,7 +332,7 @@ function mock_bridge($path, $method, $params) {
 function mock_state_load($path) {
     if (!file_exists($path)) {
         $default = new SimpleXMLElement(
-            '<state><mode>0</mode><position x="0.000" y="0.000" z="0.000"/><axis x="0" y="0" z="0"/></state>'
+            '<state><mode>0</mode><position x="0.000" y="0.000" z="0.000"/><axis x="0" y="0" z="0"/><settings thickness="0.0" speed="0.0"/></state>'
         );
         mock_state_save($path, $default);
         return $default;
@@ -211,6 +348,15 @@ function mock_state_load($path) {
         $axisNode->addAttribute('x', '0');
         $axisNode->addAttribute('y', '0');
         $axisNode->addAttribute('z', '0');
+        mock_state_save($path, $state);
+    }
+
+    // Backward-compat: older mock_state.xml files won't have a <settings>
+    // node yet either - add one with defaults.
+    if (!isset($state->settings)) {
+        $settingsNode = $state->addChild('settings');
+        $settingsNode->addAttribute('thickness', '0.0');
+        $settingsNode->addAttribute('speed', '0.0');
         mock_state_save($path, $state);
     }
 

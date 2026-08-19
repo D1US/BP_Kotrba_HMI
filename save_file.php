@@ -18,10 +18,17 @@ if ($extension !== 'nc') {
 
 $uploaded = $_FILES['file']['tmp_name'];
 
-if(move_uploaded_file($uploaded, $SAVE_FILE_PATH)){
-    echo 'OK';
-} else {
+if (!move_uploaded_file($uploaded, $SAVE_FILE_PATH)) {
     http_response_code(500);
     echo 'Save failed';
+    exit;
 }
+
+if (!ftp_upload_file($SAVE_FILE_PATH)) {
+    http_response_code(502);
+    echo 'ERROR: saved locally but FTP upload to machine controller failed';
+    exit;
+}
+
+echo 'OK';
 ?>

@@ -16,14 +16,24 @@
             <button id="settings-close-btn" class="icon-btn" aria-label="Close settings">&times;</button>
         </div>
         <div class="settings-panel-content">
-            <!-- Placeholder — real settings sections get added here later.
-                 Suggested pattern for a new section:
+            <!-- More sections get added here later.
+                 Pattern for a new section:
                  <div class="settings-section">
                      <h2>Section Name</h2>
                      ... fields/buttons ...
                  </div>
             -->
-            <p class="settings-empty">No settings yet.</p>
+            <div class="settings-section">
+                <h2>Machine Settings</h2>
+                <label class="settings-field">
+                    <span class="settings-field-label">Material Thickness</span>
+                    <input type="number" id="setting-thickness" step="any" min="0" inputmode="decimal">
+                </label>
+                <label class="settings-field">
+                    <span class="settings-field-label">Speed</span>
+                    <input type="number" id="setting-speed" step="any" min="0" inputmode="decimal">
+                </label>
+            </div>
         </div>
     </div>
 

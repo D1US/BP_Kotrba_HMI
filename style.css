@@ -201,7 +201,7 @@ button:active {
 }
 
 .jog-table tr.axis-block-end td {
-    padding-bottom: 3rem;
+    padding-bottom: 2.25rem;
 }
 
 .axis-action-btn.axis-reset {
@@ -408,6 +408,29 @@ button:disabled {
 .settings-empty {
     color: var(--text-dim);
     font-size: 0.85rem;
+}
+
+.settings-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+}
+
+.settings-field input {
+    background: #14161a;
+    border: 1px solid var(--panel-border);
+    border-radius: 4px;
+    color: var(--text-main);
+    padding: 0.5rem 0.6rem;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.settings-field input:focus {
+    outline: none;
+    border-color: var(--accent2);
 }
 
 .icon-btn {

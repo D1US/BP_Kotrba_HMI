@@ -314,6 +314,7 @@ const settingsCloseBtn = document.getElementById('settings-close-btn');
 function openSettings() {
     settingsPanel.classList.add('open');
     settingsBackdrop.classList.add('open');
+    loadSettings();
 }
 
 function closeSettings() {
@@ -324,6 +325,46 @@ function closeSettings() {
 settingsBtn.addEventListener('click', openSettings);
 settingsCloseBtn.addEventListener('click', closeSettings);
 settingsBackdrop.addEventListener('click', closeSettings);
+
+// Machine settings (Material Thickness / Speed - LREAL values on the PLC).
+// Written straight to the PLC via ADS as soon as the field changes - no
+// Save button. Negative values aren't valid for either, so they're clamped
+// to 0 before sending.
+function loadSettings() {
+    fetch('get_settings.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) return;
+            document.getElementById('setting-thickness').value = data.thickness;
+            document.getElementById('setting-speed').value = data.speed;
+        })
+        .catch(err => console.error('Failed to load settings:', err));
+}
+
+function wireSettingInput(inputId, key) {
+    const input = document.getElementById(inputId);
+
+    input.addEventListener('change', () => {
+        let value = parseFloat(input.value);
+
+        if (isNaN(value) || value < 0) {
+            value = 0;
+        }
+        input.value = value;
+
+        fetch(`set_settings.php?key=${key}&value=${encodeURIComponent(value)}`)
+            .then(r => r.text())
+            .then(result => {
+                if (result !== 'OK') {
+                    console.error(`Failed to save ${key}:`, result);
+                }
+            })
+            .catch(err => console.error(`Save ${key} failed:`, err));
+    });
+}
+
+wireSettingInput('setting-thickness', 'thickness');
+wireSettingInput('setting-speed', 'speed');
 
 //Download log
 document.getElementById('download-btn').addEventListener('click', () => {
