@@ -11,7 +11,6 @@ if (!in_array($button, $allowed) || ($state !== '0' && $state !== '1')) {
     exit;
 }
  
-// Enforce mode lock: Start/Stop only allowed in Auto mode
 $currentMode = call_bridge('/mode', 'GET');
  
 if ($currentMode === null) {
