@@ -1,6 +1,4 @@
-//V3
-
-//Log a auto scroll
+// Log a auto scroll
 const logContent = document.getElementById('log-content');
 const logContainer = document.getElementById('log-container');
 
@@ -26,7 +24,7 @@ function updateLog(){
 updateLog();
 setInterval(updateLog , 1000);
 
-//Tlačítka
+// BTN
 const startBtn = document.getElementById('start-btn');
 if (startBtn) {
     function sendStart(state) {
@@ -42,7 +40,7 @@ if (startBtn) {
     startBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); sendStart(0); });
 }
 
-// --- Stop Button ---
+// Stop
 const stopBtn = document.getElementById('stop-btn');
 if (stopBtn) {
     function sendStop(state) {
@@ -58,7 +56,7 @@ if (stopBtn) {
     stopBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); sendStop(0); });
 }
 
-//Drag and drop
+// Drag and drop
 const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
 let selectedFile = null;
@@ -126,7 +124,7 @@ document.getElementById('save-btn').addEventListener('click', () => {
 });
 
 
-//Mode Controll
+// Mode Controll
 const modeBtn = document.getElementById('mode-btn');
 let currentMode = '0'; // '0' = manual, '1' = auto
 
@@ -145,14 +143,11 @@ function renderModeButton() {
         modeBtn.classList.add('mode-manual');
         modeBtn.classList.remove('mode-auto');
     }
-
-    // Swap which control section is shown entirely, rather than just
-    // graying out the inactive one.
+    // Display mode specific controls
     autoControls.classList.toggle('hidden', !isAuto);
     manualControls.classList.toggle('hidden', isAuto);
 
-    // Keep buttons disabled too as a safety net in case something tries
-    // to trigger them while hidden (e.g. a stray keyboard/script event).
+    // Keep buttons disabled too as a safety net
     document.getElementById('start-btn').disabled = !isAuto;
     document.getElementById('stop-btn').disabled = !isAuto;
 
@@ -190,7 +185,7 @@ modeBtn.addEventListener('click', () => {
 loadInitialMode();
 
 
-// ===== Manual jog controls (hold to move) =====
+// Manual jog controls
 document.querySelectorAll('.jog-btn').forEach(btn => {
     const axis = btn.dataset.axis;
     const dir = btn.dataset.dir;
@@ -202,13 +197,13 @@ document.querySelectorAll('.jog-btn').forEach(btn => {
 
     btn.addEventListener('mousedown', () => sendJog(1));
     btn.addEventListener('mouseup', () => sendJog(0));
-    btn.addEventListener('mouseleave', () => sendJog(0)); // stops motion if pointer drags off while held
+    btn.addEventListener('mouseleave', () => sendJog(0));
     btn.addEventListener('touchstart', (e) => { e.preventDefault(); sendJog(1); });
     btn.addEventListener('touchend', (e) => { e.preventDefault(); sendJog(0); });
-    btn.addEventListener('touchcancel', (e) => { e.preventDefault(); sendJog(0); }); // interrupted touch still releases
+    btn.addEventListener('touchcancel', (e) => { e.preventDefault(); sendJog(0); });
 });
 
-// ===== Axis toggle buttons (X/Y/Z labels double as hold-value toggles) =====
+// Axis toggle buttons
 const axisToggleState = { x: '0', y: '0', z: '0' };
 
 function renderAxisToggle(axis) {
@@ -252,7 +247,7 @@ document.querySelectorAll('.axis-toggle').forEach(btn => {
 
 loadInitialAxisToggles();
 
-// ===== Per-axis Reset / Stop (hold, same pattern as jog +/-) =====
+// Per-axis Reset / Stop
 document.querySelectorAll('.axis-action-btn').forEach(btn => {
     const axis = btn.dataset.axis;
     const action = btn.dataset.action;
@@ -270,7 +265,7 @@ document.querySelectorAll('.axis-action-btn').forEach(btn => {
     btn.addEventListener('touchcancel', (e) => { e.preventDefault(); sendAxisAction(0); });
 });
 
-// ===== Position display polling =====
+// Position display polling 
 function updatePosition() {
     fetch('get_position.php')
         .then(response => response.json())
@@ -327,9 +322,6 @@ settingsCloseBtn.addEventListener('click', closeSettings);
 settingsBackdrop.addEventListener('click', closeSettings);
 
 // Machine settings (Material Thickness / Speed - LREAL values on the PLC).
-// Written straight to the PLC via ADS as soon as the field changes - no
-// Save button. Negative values aren't valid for either, so they're clamped
-// to 0 before sending.
 function loadSettings() {
     fetch('get_settings.php')
         .then(response => response.json())
@@ -366,7 +358,7 @@ function wireSettingInput(inputId, key) {
 wireSettingInput('setting-thickness', 'thickness');
 wireSettingInput('setting-speed', 'speed');
 
-//Download log
+// Download log
 document.getElementById('download-btn').addEventListener('click', () => {
     const blob = new Blob([logContent.textContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
