@@ -9,10 +9,7 @@
     --accent-dim: #7a5f27;
     --danger: #c1503f;
     --gap: 1rem;
-    --edge: 2.4rem; /* ~1cm on a typical screen */
-
-    /* Control panel button sizing — edit these two to resize Start/Stop/Mode
-       without touching Clear/Save, which live outside .control-panel */
+    --edge: 2.4rem;
     --ctrl-btn-padding: 1.2rem 1rem;
     --ctrl-btn-font-size: 1rem;
 }
@@ -65,7 +62,7 @@ h2 {
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: 6px;
-    padding: 3rem 1.25rem 1.25rem 1.25rem; /* extra top space clears the fixed settings gear button */
+    padding: 3rem 1.25rem 1.25rem 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -76,7 +73,7 @@ h2 {
     display: grid;
     grid-template-rows: 2fr 1fr;
     gap: var(--gap);
-    min-height: 0; /* required so grid children can shrink/scroll properly */
+    min-height: 0;
 }
 
 .panel {
@@ -153,9 +150,7 @@ button:active {
     flex: 1;
 }
 
-/* Sizing for ALL control-panel buttons (Mode, Start, Stop) — scoped so it
-   never touches Clear/Save, which live in .panel, not .control-panel.
-   Edit --ctrl-btn-padding / --ctrl-btn-font-size at the top to resize them. */
+/* Sizing for ALL control-panel buttons (Mode, Start, Stop) */
 .control-panel button {
     padding: var(--ctrl-btn-padding);
     font-size: var(--ctrl-btn-font-size);
@@ -326,7 +321,7 @@ button:disabled {
     display: none;
 }
 
-/* ===== Settings button + drawer ===== */
+/* Settings button + drawer*/
 
 #settings-btn {
     position: fixed;
@@ -471,11 +466,11 @@ button:disabled {
     }
 
     #log-container {
-        height: 250px; /* fixed height so it doesn't try to fill an undefined space */
+        height: 250px;
         flex: none;
     }
 
     .control-panel {
-        padding-top: 4.5rem; /* body padding shrinks here but the gear button stays put, so needs more clearance */
+        padding-top: 4.5rem;
     }
 }
