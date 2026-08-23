@@ -53,20 +53,20 @@ $FTP_USERNAME         = 'ftpuser';          // TODO: real FTP username
 $FTP_PASSWORD         = 'ftppassword';      // TODO: real FTP password
 
 // Where the .nc program gets uploaded TO on the controller (see save_file.php)
-$FTP_REMOTE_DIR       = '/';                // TODO: remote directory to upload into
+$FTP_REMOTE_DIR       = '/ftp-hmi';         // confirmed via test_ftp.php - not jailed, real root path
 $FTP_REMOTE_FILENAME  = 'plc_upload.nc';    // filename the machine controller expects
 
 // Where the machine log gets pulled FROM on the controller (see sync_log.php).
 // The controller (Windows CE 6.0 IPC) writes its own log there; this app
 // doesn't write to it, only reads it periodically via FTP.
-$FTP_LOG_REMOTE_DIR      = '/';             // TODO: remote directory the log file lives in
+$FTP_LOG_REMOTE_DIR      = '/ftp-hmi';      // confirmed via test_ftp.php - TODO: confirm this is really where the log lives, not just the same folder as the .nc upload
 $FTP_LOG_REMOTE_FILENAME = 'machine.log';   // TODO: real log filename on the IPC
 
 // Passive mode is the usual safe default (works through NAT/firewalls),
-// but some embedded FTP servers (older Windows CE devices in particular)
-// hang once PASV is turned on. If connect/login succeed but everything
-// after that times out, set this to false to try Active mode instead.
-$FTP_PASSIVE_MODE = true;
+// but this project's IPC (Windows CE 6.0) hangs the whole control channel
+// the moment PASV is invoked - confirmed via test_ftp.php. Active mode
+// (false) is what actually works here, so that's the default now.
+$FTP_PASSIVE_MODE = false;
 
 /**
  * Opens an FTP connection and logs in. Returns the connection resource,
