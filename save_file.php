@@ -28,9 +28,11 @@ if (!is_dir($saveDir) && !mkdir($saveDir, 0777, true) && !is_dir($saveDir)) {
     exit;
 }
 
-if (!move_uploaded_file($uploaded, $SAVE_FILE_PATH)) {
+if (!@move_uploaded_file($uploaded, $SAVE_FILE_PATH)) {
+    $error = error_get_last();
+    $reason = $error['message'] ?? 'unknown reason';
     http_response_code(500);
-    echo 'Save failed';
+    echo 'Save failed: ' . $reason;
     exit;
 }
 
