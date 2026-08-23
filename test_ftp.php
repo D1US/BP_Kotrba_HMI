@@ -40,14 +40,24 @@ echo "(This tells you whether the FTP account is 'jailed' to a subfolder -\n";
 echo " if this already shows something like /ftp-hmi, then \$FTP_REMOTE_DIR\n";
 echo " should be relative to THIS, e.g. just '/', not the full Hard Disk path.)\n\n";
 
-echo "Contents of that directory:\n";
+echo "Contents of that directory (NLIST - names only):\n";
 $list = @ftp_nlist($conn, '.');
 if ($list === false || empty($list)) {
-    echo "  (empty, or could not list - try browsing manually with an FTP client\n";
-    echo "   like FileZilla or WinSCP using the same credentials to compare)\n";
+    echo "  (empty, or could not list)\n";
 } else {
     foreach ($list as $entry) {
         echo "  $entry\n";
+    }
+}
+
+echo "\nContents of that directory (raw LIST - full detail, more reliable on\n";
+echo "quirky/embedded FTP servers that NLIST sometimes mishandles):\n";
+$rawList = @ftp_rawlist($conn, '.');
+if ($rawList === false || empty($rawList)) {
+    echo "  (empty, or could not list)\n";
+} else {
+    foreach ($rawList as $line) {
+        echo "  $line\n";
     }
 }
 
