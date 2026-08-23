@@ -38,10 +38,10 @@ $BRIDGE_URL  = 'http://' . $BRIDGE_HOST . ':5000';
 // FTP (machine controller file transfer)
 // TODO: replace these with the real FTP host/credentials once known.
 // =====================================================================
-$FTP_HOST            = '192.168.1.10'; // TODO: real FTP host/IP of the machine controller
-$FTP_PORT             = 20;
-$FTP_USERNAME         = 'guest';          // TODO: real FTP username
-$FTP_PASSWORD         = 'guest';      // TODO: real FTP password
+$FTP_HOST            = 'ftp.machine.local'; // TODO: real FTP host/IP of the machine controller
+$FTP_PORT             = 21;
+$FTP_USERNAME         = 'ftpuser';          // TODO: real FTP username
+$FTP_PASSWORD         = 'ftppassword';      // TODO: real FTP password
 
 // Where the .nc program gets uploaded TO on the controller (see save_file.php)
 $FTP_REMOTE_DIR       = '/';                // TODO: remote directory to upload into
@@ -53,34 +53,84 @@ $FTP_REMOTE_FILENAME  = 'plc_upload.nc';    // filename the machine controller e
 $FTP_LOG_REMOTE_DIR      = '/';             // TODO: remote directory the log file lives in
 $FTP_LOG_REMOTE_FILENAME = 'machine.log';   // TODO: real log filename on the IPC
 
+// Passive mode is the usual safe default (works through NAT/firewalls),
+// but some embedded FTP servers (older Windows CE devices in particular)
+// hang once PASV is turned on. If connect/login succeed but everything
+// after that times out, set this to false to try Active mode instead.
+$FTP_PASSIVE_MODE = true;
+
 /**
  * Opens an FTP connection and logs in. Returns the connection resource,
  * or false on failure. Shared by the upload and download helpers below
  * so the connect/login/passive-mode logic only lives in one place.
+ */
+/**
+ * Opens an FTP connection and logs in. Returns the connection resource
+ * on success. On failure, returns a string describing what went wrong
+ * (bad host, bad credentials, etc) instead of just false, so callers can
+ * surface something more useful than "it didn't work".
  */
 function ftp_connect_and_login() {
     global $FTP_HOST, $FTP_PORT, $FTP_USERNAME, $FTP_PASSWORD;
 
     $conn = @ftp_connect($FTP_HOST, $FTP_PORT, 5);
     if ($conn === false) {
-        return false;
+        $err = error_get_last();
+        return 'could not connect to ' . $FTP_HOST . ':' . $FTP_PORT
+            . ($err ? ' (' . $err['message'] . ')' : '');
     }
 
     if (!@ftp_login($conn, $FTP_USERNAME, $FTP_PASSWORD)) {
+        $err = error_get_last();
         ftp_close($conn);
-        return false;
+        return 'login failed for user "' . $FTP_USERNAME . '"'
+            . ($err ? ' (' . $err['message'] . ')' : '');
     }
 
-    // Most machine controllers sit behind NAT/firewalls that only allow
-    // the client to initiate the data connection too, so passive mode.
-    ftp_pasv($conn, true);
+    // Command timeout for everything AFTER connect (PWD, NLIST, PUT, GET...).
+    // Left at PHP's default (~60-90s) this makes a broken PASV response hang
+    // for ages before failing. 5s makes failures fail fast during setup/testing.
+    @ftp_set_option($conn, FTP_TIMEOUT_SEC, 5);
+
+    // Most machine controllers sit behind NAT/firewalls that only allow the
+    // client to initiate the data connection too, so passive mode is the
+    // usual default. Some lightweight/embedded FTP servers (older Windows
+    // CE devices in particular) don't implement PASV correctly and will
+    // hang once it's turned on - if uploads/downloads/listings all time
+    // out right after this point, try setting $FTP_PASSIVE_MODE = false
+    // in the settings above.
+    global $FTP_PASSIVE_MODE;
+    ftp_pasv($conn, $FTP_PASSIVE_MODE);
 
     return $conn;
 }
 
 /**
- * Uploads a local file to the machine controller's FTP server.
- * Returns true on success, false on failure.
+ * Best-effort creation of a remote directory path, one segment at a time
+ * (ftp_mkdir only creates one level per call). Failures are ignored here -
+ * the overwhelmingly common failure is "already exists", which is fine;
+ * if the directory genuinely can't be created for some other reason
+ * (permissions, etc), the ftp_put()/ftp_get() call right after this will
+ * fail anyway and that failure gets reported properly.
+ */
+function ftp_ensure_remote_dir($conn, $remoteDir) {
+    $remoteDir = trim($remoteDir, '/');
+    if ($remoteDir === '') {
+        return; // root always exists
+    }
+
+    $path = '';
+    foreach (explode('/', $remoteDir) as $segment) {
+        $path .= '/' . $segment;
+        @ftp_mkdir($conn, $path);
+    }
+}
+
+/**
+ * Uploads a local file to the machine controller's FTP server, creating
+ * the destination folder first if it doesn't exist yet.
+ *
+ * Returns true on success, or a string describing the failure reason.
  *
  * In mock mode (BACKEND_MODE = 'mock') this is skipped entirely and
  * always returns true, since there's no real controller/FTP server to
@@ -94,16 +144,25 @@ function ftp_upload_file($localPath) {
     }
 
     $conn = ftp_connect_and_login();
-    if ($conn === false) {
-        return false;
+    if (!is_resource($conn) && !($conn instanceof \FTP\Connection)) {
+        // $conn is actually the error string in this case
+        return $conn;
     }
+
+    ftp_ensure_remote_dir($conn, $FTP_REMOTE_DIR);
 
     $remotePath = rtrim($FTP_REMOTE_DIR, '/') . '/' . $FTP_REMOTE_FILENAME;
     $ok = @ftp_put($conn, $remotePath, $localPath, FTP_BINARY);
 
+    if (!$ok) {
+        $err = error_get_last();
+        $reason = 'could not upload to ' . $remotePath
+            . ($err ? ' (' . $err['message'] . ')' : '');
+    }
+
     ftp_close($conn);
 
-    return $ok;
+    return $ok ? true : $reason;
 }
 
 /**
@@ -114,8 +173,8 @@ function ftp_upload_file($localPath) {
  * leaves behind, so the frontend's 1-second polling never touches the
  * network itself.
  *
- * Returns true on success, false on failure. Skipped (returns true) in
- * mock mode, same as ftp_upload_file().
+ * Returns true on success, or a string describing the failure reason.
+ * Skipped (returns true) in mock mode, same as ftp_upload_file().
  */
 function ftp_download_log_file() {
     global $FTP_LOG_REMOTE_DIR, $FTP_LOG_REMOTE_FILENAME, $LOG_FILE_PATH, $BACKEND_MODE;
@@ -125,8 +184,8 @@ function ftp_download_log_file() {
     }
 
     $conn = ftp_connect_and_login();
-    if ($conn === false) {
-        return false;
+    if (!is_resource($conn) && !($conn instanceof \FTP\Connection)) {
+        return $conn;
     }
 
     $remotePath = rtrim($FTP_LOG_REMOTE_DIR, '/') . '/' . $FTP_LOG_REMOTE_FILENAME;
@@ -140,9 +199,15 @@ function ftp_download_log_file() {
     // correctly, unlike the binary .nc transfer above).
     $ok = @ftp_get($conn, $LOG_FILE_PATH, $remotePath, FTP_ASCII);
 
+    if (!$ok) {
+        $err = error_get_last();
+        $reason = 'could not download ' . $remotePath
+            . ($err ? ' (' . $err['message'] . ')' : '');
+    }
+
     ftp_close($conn);
 
-    return $ok;
+    return $ok ? true : $reason;
 }
 
 /**
