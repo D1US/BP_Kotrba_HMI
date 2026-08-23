@@ -38,10 +38,10 @@ $BRIDGE_URL  = 'http://' . $BRIDGE_HOST . ':5000';
 // FTP (machine controller file transfer)
 // TODO: replace these with the real FTP host/credentials once known.
 // =====================================================================
-$FTP_HOST            = 'ftp.machine.local'; // TODO: real FTP host/IP of the machine controller
-$FTP_PORT             = 21;
-$FTP_USERNAME         = 'ftpuser';          // TODO: real FTP username
-$FTP_PASSWORD         = 'ftppassword';      // TODO: real FTP password
+$FTP_HOST            = '192.168.1.10'; // TODO: real FTP host/IP of the machine controller
+$FTP_PORT             = 20;
+$FTP_USERNAME         = 'guest';          // TODO: real FTP username
+$FTP_PASSWORD         = 'guest';      // TODO: real FTP password
 
 // Where the .nc program gets uploaded TO on the controller (see save_file.php)
 $FTP_REMOTE_DIR       = '/';                // TODO: remote directory to upload into
