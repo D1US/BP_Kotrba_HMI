@@ -20,11 +20,20 @@ $BACKEND_MODE = 'bridge';   // 'bridge' | 'mock'
 
 // BRIDGE_ENV: only matters when BACKEND_MODE = 'bridge'. Picks which
 // host to reach the bridge on.
-//   'docker' -> web app running in its Docker container, bridge reachable
-//               via host.docker.internal (see extra_hosts in docker-compose.yml)
-//   'local'  -> everything (this web app AND bridge.py) running directly
-//               on the same machine, no Docker involved -> use localhost
-$BRIDGE_ENV = 'docker';     // 'docker' | 'local'
+//   'docker' -> web app running in its OWN Docker network (bridge mode),
+//               separate from the bridge container - reachable via
+//               host.docker.internal (needs extra_hosts in docker-compose.yml)
+//   'local'  -> web app shares the host's real network stack directly -
+//               either running outside Docker entirely, OR (as in this
+//               project's current setup) running WITH network_mode: host
+//               in docker-compose.yml. Either way, use localhost.
+//
+// IMPORTANT: this project's docker-compose.yml now runs the web service
+// with network_mode: host (needed for FTP to the IPC to work at all -
+// see the FTP troubleshooting notes). That means 'docker' mode's
+// host.docker.internal WON'T resolve anymore (its extra_hosts entry was
+// removed as unnecessary). Use 'local' here to match.
+$BRIDGE_ENV = 'local';     // 'docker' | 'local'
 
 // Where the mock state file lives when BACKEND_MODE = 'mock'.
 // Auto-created with sane defaults (mode=manual, position=0,0,0) the
