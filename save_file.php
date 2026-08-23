@@ -18,6 +18,16 @@ if ($extension !== 'nc') {
 
 $uploaded = $_FILES['file']['tmp_name'];
 
+// The destination folder isn't created automatically by move_uploaded_file(),
+// so make sure it exists first (same pattern used elsewhere in config.php
+// for the mock state file and the synced log file).
+$saveDir = dirname($SAVE_FILE_PATH);
+if (!is_dir($saveDir) && !mkdir($saveDir, 0777, true) && !is_dir($saveDir)) {
+    http_response_code(500);
+    echo 'Save failed: could not create destination folder';
+    exit;
+}
+
 if (!move_uploaded_file($uploaded, $SAVE_FILE_PATH)) {
     http_response_code(500);
     echo 'Save failed';
