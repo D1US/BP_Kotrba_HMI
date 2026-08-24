@@ -108,7 +108,8 @@ h2 {
 }
 
 /* Buttons, general */
-button {
+button,
+.btn {
     background: var(--panel-border);
     color: var(--text-main);
     border: 1px solid var(--panel-border);
@@ -122,11 +123,13 @@ button {
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-button:hover {
+button:hover,
+.btn:hover {
     background: #3a4048;
 }
 
-button:active {
+button:active,
+.btn:active {
     background: #454c55;
 }
 
@@ -137,7 +140,7 @@ button:active {
 
 .button-row button {
     flex: 1;
-    margin-bottom: 1.5rem
+    margin-bottom: 1.5rem;
 }
 
 .log-btn-row {
@@ -231,7 +234,8 @@ button:active {
     padding: 0.8rem;
 }
 
-button:disabled {
+button:disabled,
+.btn:disabled {
     opacity: 0.35;
     cursor: not-allowed;
 }
@@ -440,6 +444,14 @@ button:disabled {
 .icon-btn:hover {
     background: transparent;
     color: var(--text-main);
+}
+
+button:focus-visible,
+.btn:focus-visible,
+.axis-toggle:focus-visible,
+.icon-btn:focus-visible {
+    outline: 2px solid var(--accent2);
+    outline-offset: 2px;
 }
 
 @media (max-width: 768px) {
